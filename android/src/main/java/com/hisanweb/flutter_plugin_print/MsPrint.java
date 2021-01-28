@@ -13,6 +13,8 @@ import java.util.Iterator;
 
 public class MsPrint {
 
+    private static final String TAG = "MsPrint";
+
     private static final int VENDOR_ID = 1035;
 
     private static final int PRODUCT_ID = 8211;
@@ -40,7 +42,10 @@ public class MsPrint {
         this.context = context;
     }
 
-    // 初始化usb数据
+    /**
+     * 链接usb打印机，0代表成功，1代表打开设备失败，2代表链接设备失败，3代表没有权限，4代表没有对应usb设备
+     * @return
+     */
     public int connectUsbPrint() {
         // 获取USB设备
         manager = (UsbManager) context.getSystemService(Context.USB_SERVICE);
@@ -50,12 +55,14 @@ public class MsPrint {
         Iterator<UsbDevice> deviceIterator = deviceList.values().iterator();
         while (deviceIterator.hasNext()) {
             UsbDevice device = deviceIterator.next();
-            Log.e("ldm", "vid=" + device.getVendorId() + "---pid=" + device.getProductId());
+            Log.e(TAG, "vid=" + device.getVendorId() + "---pid=" + device.getProductId());
             if (VENDOR_ID == device.getVendorId() && PRODUCT_ID == device.getProductId()) {//找到指定设备
                 mUsbDevice = device;
             }
         }
-
+        if (mUsbDevice == null) {
+            return 4;
+        }
         //获取设备接口
         for (int i = 0; i < mUsbDevice.getInterfaceCount(); ) {
             // 一般来说一个设备都是一个接口，你可以通过getInterfaceCount()查看接口的个数
@@ -65,16 +72,15 @@ public class MsPrint {
             break;
         }
 
-        //用UsbDeviceConnection 与 UsbInterface 进行端点设置和通讯
-        if (mInterface.getEndpoint(1) != null) {
-            usbEpOut = mInterface.getEndpoint(1);
-        }
-
-        if (mInterface.getEndpoint(0) != null) {
-            usbEpIn = mInterface.getEndpoint(0);
-        }
-
         if (mInterface != null) {
+            //用UsbDeviceConnection 与 UsbInterface 进行端点设置和通讯
+            if (mInterface.getEndpoint(1) != null) {
+                usbEpOut = mInterface.getEndpoint(1);
+            }
+            if (mInterface.getEndpoint(0) != null) {
+                usbEpIn = mInterface.getEndpoint(0);
+            }
+
             // 判断是否有权限
             if (manager.hasPermission(mUsbDevice)) {
                 // 打开设备，获取 UsbDeviceConnection 对象，连接设备，用于后面的通讯
