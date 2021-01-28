@@ -1,12 +1,18 @@
 package com.hisanweb.flutter_plugin_print;
 
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbEndpoint;
 import android.hardware.usb.UsbInterface;
 import android.hardware.usb.UsbManager;
 import android.util.Log;
+
+import com.hisanweb.flutter_plugin_print.msPrintSdk.UsbDriver;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -15,11 +21,11 @@ public class MsPrint {
 
     private static final String TAG = "MsPrint";
 
-    private static final int VENDOR_ID = 1035;
-
-    private static final int PRODUCT_ID = 8211;
+    private static final String ACTION_USB_PERMISSION = "com.usb.sample.USB_PERMISSION";
 
     private Context context;
+
+    public static UsbDriver mUsbDriver;
 
     //USB管理器:负责管理USB设备的类
     private UsbManager manager;
@@ -40,6 +46,14 @@ public class MsPrint {
 
     public MsPrint(Context context) {
         this.context = context;
+        mUsbDriver = new UsbDriver((UsbManager) context.getSystemService(Context.USB_SERVICE), context);
+        PendingIntent permissionIntent = PendingIntent.getBroadcast(context, 0, new Intent(ACTION_USB_PERMISSION), 0);
+        mUsbDriver.setPermissionIntent(permissionIntent);
+        // Broadcast listen for new devices
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
+        filter.addAction(ACTION_USB_PERMISSION);
+        context.registerReceiver(mUsbReceiver, filter);
     }
 
     /**
@@ -56,7 +70,7 @@ public class MsPrint {
         while (deviceIterator.hasNext()) {
             UsbDevice device = deviceIterator.next();
             Log.e(TAG, "vid=" + device.getVendorId() + "---pid=" + device.getProductId());
-            if (VENDOR_ID == device.getVendorId() && PRODUCT_ID == device.getProductId()) {//找到指定设备
+            if (1305 == device.getVendorId() && 8211 == device.getProductId() || 1305 == device.getVendorId() && 8213 == device.getProductId()) {//找到指定设备
                 mUsbDevice = device;
             }
         }
@@ -104,4 +118,26 @@ public class MsPrint {
             return 4;
         }
     }
+
+    BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
+                UsbDevice device = (UsbDevice) intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+                if ((device.getProductId() == 8211 && device.getVendorId() == 1305) || (device.getProductId() == 8213 && device.getVendorId() == 1305)) {
+                    mUsbDriver.closeUsbDevice(device);
+                }
+            } else if (ACTION_USB_PERMISSION.equals(action)) synchronized (this) {
+                UsbDevice device = (UsbDevice) intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+                if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
+                    if ((device.getProductId() == 8211 && device.getVendorId() == 1305) || (device.getProductId() == 8213 && device.getVendorId() == 1305)) {
+                        //赋权限以后的操作
+                    }
+                } else {
+//                    Toast.makeText(MainActivity.this, "permission denied for device",
+                    Log.i(TAG,"permission denied for device");
+                }
+            }
+        }
+    };
 }

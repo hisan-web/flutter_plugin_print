@@ -78,7 +78,7 @@ public class FlutterPluginPrintPlugin implements FlutterPlugin, MethodCallHandle
    */
   private void openPagerBox(Result result) {
     byte[] bytes = hexToByteArr("1378");
-    UsbDriver mUsbDriver = MsPrintManager.mUsbDriver;
+    UsbDriver mUsbDriver = MsPrint.mUsbDriver;
     if (mUsbDriver!=null) {
       mUsbDriver.write(bytes);
       result.success(true);
