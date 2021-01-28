@@ -63,8 +63,14 @@ public class FlutterPluginPrintPlugin implements FlutterPlugin, MethodCallHandle
    */
   private void connectPrint(Result result) {
     MsPrint msPrint = new MsPrint(context);
-    result.success(msPrint.connectUsbPrint());
+    int connectResultCode = msPrint.connectUsbPrint();
+    if (connectResultCode == 3) {
+      msPrint.getUsbPermission();
+      result.success(0);
+    }
+    result.success(connectResultCode);
   }
+  
 
   /**
    * 打印

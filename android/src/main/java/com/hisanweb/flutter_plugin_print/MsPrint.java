@@ -63,11 +63,6 @@ public class MsPrint {
         // 获取USB设备
         manager = (UsbManager) mContext.getSystemService(Context.USB_SERVICE);
 
-        //
-        mUsbDriver = new UsbDriver(manager, mContext);
-        PendingIntent permissionIntent = PendingIntent.getBroadcast(mContext, 0, new Intent(ACTION_USB_PERMISSION), 0);
-        mUsbDriver.setPermissionIntent(permissionIntent);
-
         //获取到设备列表
         HashMap<String, UsbDevice> deviceList = manager.getDeviceList();
         Iterator<UsbDevice> deviceIterator = deviceList.values().iterator();
@@ -123,22 +118,33 @@ public class MsPrint {
         }
     }
 
-//    private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
-//        @SuppressLint("NewAPI")
-//        public void onReceive(Context context, Intent intent) {
-//            String action = intent.getAction();
-//
-//            if (ACTION_USB_PERMISSION.equals(action)) {
-//                synchronized (this) {
-//                    mContext.unregisterReceiver(mUsbReceiver);
-//                    UsbDevice device = (UsbDevice) intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
-//                    if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false) && mUsbDevice.equals(device)) {
-//                        //TODO 授权成功，操作USB设备
-//                    }else{
-//                        //用户点击拒绝了
-//                    }
-//                }
-//            }
-//        }
-//    };
+    // 开始申请USB权限
+    public void getUsbPermission() {
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(mContext, 0, new Intent(ACTION_USB_PERMISSION), 0);
+        IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
+        filter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
+        filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
+        mContext.registerReceiver(mUsbReceiver, filter);
+        manager.requestPermission(mUsbDevice, pendingIntent);
+    }
+
+
+    // 注册广播接收者
+    private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
+        @SuppressLint("NewAPI")
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (ACTION_USB_PERMISSION.equals(action)) {
+                synchronized (this) {
+                    mContext.unregisterReceiver(mUsbReceiver);
+                    UsbDevice device = (UsbDevice) intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+                    if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false) && mUsbDevice.equals(device)) {
+                        //TODO 授权成功，操作USB设备
+                    }else{
+                        //用户点击拒绝了
+                    }
+                }
+            }
+        }
+    };
 }
