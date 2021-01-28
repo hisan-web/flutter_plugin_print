@@ -12,13 +12,13 @@ class FlutterPluginPrint {
   }
 
   /// 链接打印机
-  static Future<bool> connectPrint() async {
+  static Future<int> connectPrint() async {
     try {
-      await _channel.invokeMethod('connectPrint');
-      return true;
+      int code = await _channel.invokeMethod('connectPrint');
+      return code;
     } catch(e) {
       print(e.toString());
-      return false;
+      return 5;
     }
   }
 

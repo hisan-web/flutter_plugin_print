@@ -25,8 +25,8 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> connectPrint() async {
-    bool result = await FlutterPluginPrint.connectPrint();
-    if ( result ) {
+    int code = await FlutterPluginPrint.connectPrint();
+    if ( code == 0 ) {
       if (!mounted) return;
       setState(() {
         _printConnectStatus = "Connect Success";
