@@ -17,6 +17,7 @@ class FlutterPluginPrint {
       await _channel.invokeMethod('connectPrint');
       return true;
     } catch(e) {
+      print(e.toString());
       return false;
     }
   }
