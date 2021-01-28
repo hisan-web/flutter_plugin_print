@@ -1,5 +1,6 @@
 package com.hisanweb.flutter_plugin_print;
 
+import android.annotation.SuppressLint;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -23,7 +24,7 @@ public class MsPrint {
 
     private static final String ACTION_USB_PERMISSION = "com.usb.sample.USB_PERMISSION";
 
-    private Context context;
+    private Context mContext;
 
     public static UsbDriver mUsbDriver;
 
@@ -45,15 +46,13 @@ public class MsPrint {
 
 
     public MsPrint(Context context) {
-        this.context = context;
-        mUsbDriver = new UsbDriver((UsbManager) context.getSystemService(Context.USB_SERVICE), context);
-        PendingIntent permissionIntent = PendingIntent.getBroadcast(context, 0, new Intent(ACTION_USB_PERMISSION), 0);
-        mUsbDriver.setPermissionIntent(permissionIntent);
+        this.mContext = context;
+
         // Broadcast listen for new devices
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
-        filter.addAction(ACTION_USB_PERMISSION);
-        context.registerReceiver(mUsbReceiver, filter);
+//        IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
+//        filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
+//        filter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
+//        mContext.registerReceiver(mUsbReceiver, filter);
     }
 
     /**
@@ -62,7 +61,12 @@ public class MsPrint {
      */
     public int connectUsbPrint() {
         // 获取USB设备
-        manager = (UsbManager) context.getSystemService(Context.USB_SERVICE);
+        manager = (UsbManager) mContext.getSystemService(Context.USB_SERVICE);
+
+        //
+        mUsbDriver = new UsbDriver(manager, mContext);
+        PendingIntent permissionIntent = PendingIntent.getBroadcast(mContext, 0, new Intent(ACTION_USB_PERMISSION), 0);
+        mUsbDriver.setPermissionIntent(permissionIntent);
 
         //获取到设备列表
         HashMap<String, UsbDevice> deviceList = manager.getDeviceList();
@@ -119,25 +123,22 @@ public class MsPrint {
         }
     }
 
-    BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
-                UsbDevice device = (UsbDevice) intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
-                if ((device.getProductId() == 8211 && device.getVendorId() == 1305) || (device.getProductId() == 8213 && device.getVendorId() == 1305)) {
-                    mUsbDriver.closeUsbDevice(device);
-                }
-            } else if (ACTION_USB_PERMISSION.equals(action)) synchronized (this) {
-                UsbDevice device = (UsbDevice) intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
-                if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
-                    if ((device.getProductId() == 8211 && device.getVendorId() == 1305) || (device.getProductId() == 8213 && device.getVendorId() == 1305)) {
-                        //赋权限以后的操作
-                    }
-                } else {
-//                    Toast.makeText(MainActivity.this, "permission denied for device",
-                    Log.i(TAG,"permission denied for device");
-                }
-            }
-        }
-    };
+//    private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
+//        @SuppressLint("NewAPI")
+//        public void onReceive(Context context, Intent intent) {
+//            String action = intent.getAction();
+//
+//            if (ACTION_USB_PERMISSION.equals(action)) {
+//                synchronized (this) {
+//                    mContext.unregisterReceiver(mUsbReceiver);
+//                    UsbDevice device = (UsbDevice) intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+//                    if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false) && mUsbDevice.equals(device)) {
+//                        //TODO 授权成功，操作USB设备
+//                    }else{
+//                        //用户点击拒绝了
+//                    }
+//                }
+//            }
+//        }
+//    };
 }
