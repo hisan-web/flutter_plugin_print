@@ -11,6 +11,34 @@ class FlutterPluginPrint {
     return version;
   }
 
+  static Future<bool> connect() async {
+    try {
+      await _channel.invokeMethod('connect');
+      return true;
+    } catch(e) {
+      print(e.toString());
+      return false;
+    }
+  }
+
+  static Future<bool> open() async {
+    try {
+      await _channel.invokeMethod('open');
+      return true;
+    } catch(e) {
+      return false;
+    }
+  }
+
+  static Future<bool> sendPrint(String string) async {
+    try {
+      await _channel.invokeMethod('sendPrint');
+      return true;
+    } catch(e) {
+      return false;
+    }
+  }
+
   /// 链接打印机
   static Future<int> connectPrint() async {
     try {
